@@ -38,6 +38,12 @@ interface ProjectListProps {
 const SELECTED_CLIENT_KEY = 'selected_client';
 const SELECTED_PROJECT_KEY = 'selected_project';
 const SELECTED_TASK_KEY = 'selected_task';
+const NOTIFICATION_TIME_KEY = 'notification_time_hours';
+
+function getNotificationTime(): number {
+  const raw = localStorage.getItem(NOTIFICATION_TIME_KEY);
+  return raw ? parseFloat(raw) : 6;
+}
 
 function getSelectedClient(): number | null {
   const raw = localStorage.getItem(SELECTED_CLIENT_KEY);
@@ -166,13 +172,14 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
 
   useEffect(() => {
     if (active.projectId && active.taskId) {
+      const notificationTimeSeconds = getNotificationTime() * 3600;
       intervalRef.current = setInterval(() => {
         setTimers((prev) => {
           const key = `${active.projectId}_${active.taskId}`;
           const newTime = (prev[key] || 0) + 1;
 
-          // Notify if timer exceeds 6 hours
-          if (newTime === 21600 && !notificationSent) {
+          // Notify if timer exceeds configured time
+          if (newTime === notificationTimeSeconds && !notificationSent) {
             window.tickApi.notifyTimerExceeded();
             setNotificationSent(true);
           }
