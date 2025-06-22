@@ -36,6 +36,14 @@ function updateIcons(isTimerActive) {
   // Update window icon
   if (mainWindow) {
     mainWindow.setIcon(image);
+    
+    // Update taskbar icon overlay on Windows
+    if (process.platform === 'win32') {
+      mainWindow.setOverlayIcon(
+        isTimerActive ? iconStarted : null,
+        isTimerActive ? 'Timer Active' : ''
+      );
+    }
   }
 }
 
