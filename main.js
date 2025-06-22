@@ -1,10 +1,15 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut } from 'electron';
+import { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, Notification } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Set AppUserModelId for notifications on Windows
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.tick-tracker.app');
+}
 
 let tray = null;
 let mainWindow = null;
@@ -196,4 +201,11 @@ ipcMain.handle('timer-started', () => {
 
 ipcMain.handle('timer-stopped', () => {
   updateIcons(false);
+});
+
+ipcMain.handle('notify-timer-exceeded', () => {
+  new Notification({
+    title: 'Timer Warning',
+    body: 'The current timer has been running for 6 hours.'
+  }).show();
 }); 

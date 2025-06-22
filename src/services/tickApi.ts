@@ -13,6 +13,7 @@ declare global {
             fetchClients: (settings: Settings) => Promise<any>;
             timerStarted: () => Promise<void>;
             timerStopped: () => Promise<void>;
+            notifyTimerExceeded: () => Promise<void>;
         };
     }
 }
@@ -33,4 +34,8 @@ export const logTimeToTick = async (settings: Settings, projectId: number, taskI
 
 export const fetchClients = async (settings: Settings) => {
     return window.tickApi.fetchClients(settings);
+};
+
+export const notifyTimerExceeded = async () => {
+    return window.tickApi.notifyTimerExceeded();
 };

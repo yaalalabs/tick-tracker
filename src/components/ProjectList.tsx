@@ -76,6 +76,7 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
   const [lastCompletedTask, setLastCompletedTask] = useState<{ projectId: number | null; taskId: number | null; time: number } | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
+  const [notificationSent, setNotificationSent] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mark data as loaded when clients and projects are available
@@ -166,8 +167,18 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
   useEffect(() => {
     if (active.projectId && active.taskId) {
       intervalRef.current = setInterval(() => {
-        const key = `${active.projectId}_${active.taskId}`;
-        setTimers((prev) => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+        setTimers((prev) => {
+          const key = `${active.projectId}_${active.taskId}`;
+          const newTime = (prev[key] || 0) + 1;
+
+          // Notify if timer exceeds 6 hours
+          if (newTime === 21600 && !notificationSent) {
+            window.tickApi.notifyTimerExceeded();
+            setNotificationSent(true);
+          }
+          
+          return { ...prev, [key]: newTime };
+        });
       }, 1000);
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -179,11 +190,12 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
         intervalRef.current = null;
       }
     };
-  }, [active]);
+  }, [active, notificationSent]);
 
   const handleStart = () => {
     if (selectedProject && selectedTask) {
       setActive({ projectId: selectedProject, taskId: selectedTask });
+      setNotificationSent(false); // Reset notification sent flag
       // Update app icon to show timer is active
       window.tickApi.timerStarted();
     }
@@ -206,6 +218,7 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
       // Set the last completed task
       setLastCompletedTask({ projectId: active.projectId, taskId: active.taskId, time: seconds });
       setActive({ projectId: null, taskId: null });
+      setNotificationSent(false);
       // Update app icon to show timer is inactive
       window.tickApi.timerStopped();
     }

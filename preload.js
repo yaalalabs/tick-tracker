@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('tickApi', {
   fetchClients: (settings) => ipcRenderer.invoke('fetch-clients', settings),
   timerStarted: () => ipcRenderer.invoke('timer-started'),
   timerStopped: () => ipcRenderer.invoke('timer-stopped'),
+  notifyTimerExceeded: () => ipcRenderer.invoke('notify-timer-exceeded'),
 });
 
 window.addEventListener('DOMContentLoaded', () => {
