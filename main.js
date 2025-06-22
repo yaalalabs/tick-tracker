@@ -1,10 +1,21 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, Notification } from 'electron';
+import { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, Notification, nativeImage } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Determine the correct path for icons based on development or production
+const getAssetPath = (...paths) => {
+  if (process.env.NODE_ENV === 'development') {
+    return path.join(__dirname, 'public', ...paths);
+  }
+  return path.join(process.resourcesPath, 'public', ...paths);
+};
+
+const iconDefault = nativeImage.createFromPath(getAssetPath('tick-icon.png'));
+const iconStarted = nativeImage.createFromPath(getAssetPath('tick-icon-started.png'));
 
 // Set AppUserModelId for notifications on Windows
 if (process.platform === 'win32') {
@@ -15,24 +26,21 @@ let tray = null;
 let mainWindow = null;
 
 function updateIcons(isTimerActive) {
-  const iconName = isTimerActive ? 'tick-icon-started.png' : 'tick-icon.png';
-  const iconPath = path.join(__dirname, 'public', iconName);
+  const image = isTimerActive ? iconStarted : iconDefault;
   
   // Update tray icon
   if (tray) {
-    tray.setImage(iconPath);
+    tray.setImage(image);
   }
   
   // Update window icon
   if (mainWindow) {
-    mainWindow.setIcon(iconPath);
+    mainWindow.setIcon(image);
   }
 }
 
 function createTray() {
-  // Use tick-icon.png as the tray icon
-  const iconPath = path.join(__dirname, 'public', 'tick-icon.png');
-  tray = new Tray(iconPath);
+  tray = new Tray(iconDefault);
   
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -76,7 +84,7 @@ function createWindow() {
     width: 400,
     height: 450,
     resizable: false,
-    icon: path.join(__dirname, 'public', 'tick-icon.png'),
+    icon: iconDefault,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -89,7 +97,7 @@ function createWindow() {
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173');
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
+    mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
   }
 
   // Minimize to tray instead of taskbar

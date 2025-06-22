@@ -4,7 +4,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import SettingsIcon from '@mui/icons-material/Settings';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import SettingsDialog from './components/SettingsDialog';
+import GeneralSettingsDialog from './components/GeneralSettingsDialog';
 import ProjectList from './components/ProjectList';
 import { fetchProjects, fetchClients } from './services/tickApi';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -51,10 +54,30 @@ function saveSettings(settings: Settings) {
 export default function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isGeneralSettingsOpen, setIsGeneralSettingsOpen] = useState<boolean>(false);
   const [projects, setProjects] = useState<any[] | null>(null);
   const [clients, setClients] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleApiConfig = () => {
+    setIsSettingsOpen(true);
+    handleMenuClose();
+  };
+
+  const handleGeneralSettings = () => {
+    setIsGeneralSettingsOpen(true);
+    handleMenuClose();
+  };
 
   useEffect(() => {
     const s = getSettings();
@@ -88,15 +111,15 @@ export default function App() {
     setIsSettingsOpen(false);
   };
 
-  const handleOpenSettings = () => {
-    setIsSettingsOpen(true);
+  const handleSaveGeneralSettings = () => {
+    setIsGeneralSettingsOpen(false);
   };
 
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <IconButton 
-        onClick={handleOpenSettings} 
+        onClick={handleMenuClick}
         aria-label="settings"
         style={{ 
           position: 'fixed', 
@@ -107,12 +130,25 @@ export default function App() {
       >
         <SettingsIcon />
       </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleApiConfig}>API Configurations</MenuItem>
+        <MenuItem onClick={handleGeneralSettings}>Settings</MenuItem>
+      </Menu>
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <SettingsDialog
           open={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           onSave={handleSaveSettings}
           initialSettings={settings || undefined}
+        />
+        <GeneralSettingsDialog
+          open={isGeneralSettingsOpen}
+          onClose={() => setIsGeneralSettingsOpen(false)}
+          onSave={handleSaveGeneralSettings}
         />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
           <h1 style={{ margin: 0 }}>Tick Tracker</h1>
