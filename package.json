@@ -58,20 +58,6 @@
     },
     "win": {
       "icon": "public/tick-icon.png"
-    },
-    "linux": {
-      "icon": "public/tick-icon.png",
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": ["x64"]
-        },
-        {
-          "target": "deb",
-          "arch": ["x64"]
-        }
-      ],
-      "category": "Utility"
     }
   }
 }
