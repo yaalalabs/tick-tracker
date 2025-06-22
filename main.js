@@ -3,8 +3,28 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 
+// Enforce single instance lock - must be at the very beginning
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+let tray = null;
+let mainWindow = null;
+let isTimerActive = false; // Track timer state
+
+// Handle second instance
+app.on('second-instance', (event, commandLine, workingDirectory) => {
+  if (mainWindow) {
+    if (!mainWindow.isVisible()) mainWindow.show();
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    updateIcons(isTimerActive); // Restore overlay icon state
+  }
+});
 
 // Determine the correct path for icons based on development or production
 const getAssetPath = (...paths) => {
@@ -22,10 +42,8 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.tick-tracker.app');
 }
 
-let tray = null;
-let mainWindow = null;
-
-function updateIcons(isTimerActive) {
+function updateIcons(timerActive) {
+  isTimerActive = timerActive; // Update the stored state
   const image = isTimerActive ? iconStarted : iconDefault;
   
   // Update tray icon
@@ -93,6 +111,7 @@ function createWindow() {
     height: 450,
     resizable: false,
     icon: iconDefault,
+    skipTaskbar: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -121,6 +140,18 @@ function createWindow() {
       mainWindow.hide();
     }
   });
+
+  // Show window when clicking on dock icon (macOS) or taskbar icon (Windows)
+  mainWindow.on('restore', () => {
+    mainWindow.show();
+    mainWindow.focus();
+    updateIcons(isTimerActive); // Restore overlay icon state
+  });
+
+  // Ensure overlay icon is set when showing window
+  mainWindow.on('show', () => {
+    updateIcons(isTimerActive);
+  });
 }
 
 app.whenReady().then(() => {
@@ -134,11 +165,19 @@ app.whenReady().then(() => {
     } else {
       mainWindow.show();
       mainWindow.focus();
+      updateIcons(isTimerActive); // Restore overlay icon state
     }
   });
 
+  // Handle taskbar/dock clicks when no windows are open
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (!mainWindow) {
+      createWindow();
+    } else if (!mainWindow.isVisible()) {
+      mainWindow.show();
+      mainWindow.focus();
+      updateIcons(isTimerActive); // Restore overlay icon state
+    }
   });
 });
 
