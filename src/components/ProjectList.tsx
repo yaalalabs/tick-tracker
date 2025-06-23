@@ -83,7 +83,6 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
   const [dataLoaded, setDataLoaded] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const [notificationSent, setNotificationSent] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mark data as loaded when clients and projects are available
   useEffect(() => {
@@ -170,34 +169,56 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
     }
   }, [selectedTask]);
 
+  // Timer management using main process
   useEffect(() => {
     if (active.projectId && active.taskId) {
-      const notificationTimeSeconds = getNotificationTime() * 3600;
-      intervalRef.current = setInterval(() => {
+      const notificationTimeHours = getNotificationTime();
+      window.tickApi.startTimer(notificationTimeHours);
+      
+      // Listen for timer updates from main process
+      const handleTimerUpdate = (event: any, seconds: number) => {
         setTimers((prev) => {
           const key = `${active.projectId}_${active.taskId}`;
-          const newTime = (prev[key] || 0) + 1;
-
-          // Notify if timer exceeds configured time
-          if (newTime === notificationTimeSeconds && !notificationSent) {
-            window.tickApi.notifyTimerExceeded();
-            setNotificationSent(true);
-          }
-          
-          return { ...prev, [key]: newTime };
+          return { ...prev, [key]: seconds };
         });
-      }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+      };
+      
+      const handleTimerStopped = () => {
+        setActive({ projectId: null, taskId: null });
+        setNotificationSent(false);
+      };
+      
+      window.tickApi.onTimerUpdate(handleTimerUpdate);
+      window.tickApi.onTimerStopped(handleTimerStopped);
+      
+      return () => {
+        // Cleanup listeners
+        window.tickApi.onTimerUpdate(() => {});
+        window.tickApi.onTimerStopped(() => {});
+      };
+    } else {
+      window.tickApi.stopTimer();
     }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+  }, [active]);
+
+  // Restore timer state on component mount
+  useEffect(() => {
+    const restoreTimerState = async () => {
+      try {
+        const timerState = await window.tickApi.getTimerState();
+        if (timerState.isActive) {
+          // If there's an active timer, we need to restore the UI state
+          // This would require storing the active project/task in localStorage
+          // For now, we'll just stop any existing timer
+          window.tickApi.stopTimer();
+        }
+      } catch (error) {
+        console.error('Failed to restore timer state:', error);
       }
     };
-  }, [active, notificationSent]);
+    
+    restoreTimerState();
+  }, []);
 
   const handleStart = () => {
     if (selectedProject && selectedTask) {

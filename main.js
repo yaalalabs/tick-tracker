@@ -15,6 +15,10 @@ const __dirname = path.dirname(__filename);
 let tray = null;
 let mainWindow = null;
 let isTimerActive = false; // Track timer state
+let timerInterval = null; // Timer interval for background timing
+let timerSeconds = 0; // Current timer seconds
+let notificationTimeSeconds = 6 * 3600; // Default 6 hours in seconds
+let notificationSent = false; // Track if notification was sent
 
 // Handle second instance
 app.on('second-instance', (event, commandLine, workingDirectory) => {
@@ -62,6 +66,62 @@ function updateIcons(timerActive) {
         isTimerActive ? 'Timer Active' : ''
       );
     }
+  }
+}
+
+// Timer management functions
+function startTimer(notificationTimeHours = 6) {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+  
+  timerSeconds = 0;
+  notificationTimeSeconds = notificationTimeHours * 3600;
+  notificationSent = false;
+  isTimerActive = true;
+  
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    
+    // Check for notification
+    if (timerSeconds >= notificationTimeSeconds && !notificationSent) {
+      notifyTimerExceeded();
+      notificationSent = true;
+    }
+    
+    // Update window with current time
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('timer-update', timerSeconds);
+    }
+  }, 1000);
+  
+  updateIcons(true);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
+  isTimerActive = false;
+  timerSeconds = 0;
+  notificationSent = false;
+  updateIcons(false);
+  
+  // Notify renderer that timer stopped
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('timer-stopped');
+  }
+}
+
+function notifyTimerExceeded() {
+  if (process.platform === 'win32') {
+    new Notification({
+      title: 'Tick Tracker',
+      body: `Timer has exceeded ${notificationTimeSeconds / 3600} hours`,
+      icon: iconStarted
+    }).show();
   }
 }
 
@@ -250,6 +310,22 @@ ipcMain.handle('fetch-clients', async (event, settings) => {
 });
 
 // IPC handlers for timer state changes
+ipcMain.handle('start-timer', (event, notificationTimeHours = 6) => {
+  startTimer(notificationTimeHours);
+});
+
+ipcMain.handle('stop-timer', () => {
+  stopTimer();
+});
+
+ipcMain.handle('get-timer-state', () => {
+  return {
+    isActive: isTimerActive,
+    seconds: timerSeconds,
+    notificationTimeSeconds: notificationTimeSeconds
+  };
+});
+
 ipcMain.handle('timer-started', () => {
   updateIcons(true);
 });

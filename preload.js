@@ -10,6 +10,11 @@ contextBridge.exposeInMainWorld('tickApi', {
   timerStarted: () => ipcRenderer.invoke('timer-started'),
   timerStopped: () => ipcRenderer.invoke('timer-stopped'),
   notifyTimerExceeded: () => ipcRenderer.invoke('notify-timer-exceeded'),
+  startTimer: (notificationTimeHours) => ipcRenderer.invoke('start-timer', notificationTimeHours),
+  stopTimer: () => ipcRenderer.invoke('stop-timer'),
+  getTimerState: () => ipcRenderer.invoke('get-timer-state'),
+  onTimerUpdate: (callback) => ipcRenderer.on('timer-update', callback),
+  onTimerStopped: (callback) => ipcRenderer.on('timer-stopped', callback),
 });
 
 window.addEventListener('DOMContentLoaded', () => {
