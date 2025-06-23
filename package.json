@@ -62,6 +62,12 @@
     },
     "win": {
       "icon": "public/tick-icon.png"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "public/tick-icon.png",
+      "category": "Utility",
+      "maintainer": "dhana@yaalalabs.com"
     }
   }
 }
