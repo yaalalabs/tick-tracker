@@ -83,6 +83,7 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
   const [dataLoaded, setDataLoaded] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const [notificationSent, setNotificationSent] = useState(false);
+  const wasActive = useRef(false);
 
   // Mark data as loaded when clients and projects are available
   useEffect(() => {
@@ -171,10 +172,11 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
 
   // Timer management using main process
   useEffect(() => {
-    if (active.projectId && active.taskId) {
+    const isNowActive = !!(active.projectId && active.taskId);
+
+    if (isNowActive) {
       const notificationTimeHours = getNotificationTime();
       window.tickApi.startTimer(notificationTimeHours);
-      
       // Listen for timer updates from main process
       const handleTimerUpdate = (event: any, seconds: number) => {
         setTimers((prev) => {
@@ -182,23 +184,22 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
           return { ...prev, [key]: seconds };
         });
       };
-      
       const handleTimerStopped = () => {
         setActive({ projectId: null, taskId: null });
         setNotificationSent(false);
       };
-      
       window.tickApi.onTimerUpdate(handleTimerUpdate);
       window.tickApi.onTimerStopped(handleTimerStopped);
-      
       return () => {
-        // Cleanup listeners
         window.tickApi.onTimerUpdate(() => {});
         window.tickApi.onTimerStopped(() => {});
       };
-    } else {
+    } else if (wasActive.current) {
+      // Only stop the timer if it was previously running
       window.tickApi.stopTimer();
     }
+    wasActive.current = isNowActive;
+    // eslint-disable-next-line
   }, [active]);
 
   // Restore timer state on component mount
@@ -224,7 +225,7 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
     if (selectedProject && selectedTask) {
       setActive({ projectId: selectedProject, taskId: selectedTask });
       setNotificationSent(false); // Reset notification sent flag
-      // Update app icon to show timer is active
+      window.tickApi.startTimer(getNotificationTime()); // Start the timer in main process
       window.tickApi.timerStarted();
     }
   };

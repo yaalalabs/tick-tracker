@@ -71,48 +71,45 @@ function updateIcons(timerActive) {
 
 // Timer management functions
 function startTimer(notificationTimeHours = 6) {
+  console.log('startTimer called');
   if (timerInterval) {
     clearInterval(timerInterval);
+    timerInterval = null;
+    console.log('Previous timer stopped');
   }
-  
   timerSeconds = 0;
   notificationTimeSeconds = notificationTimeHours * 3600;
   notificationSent = false;
   isTimerActive = true;
-  
   timerInterval = setInterval(() => {
     timerSeconds++;
-    
-    // Check for notification
     if (timerSeconds >= notificationTimeSeconds && !notificationSent) {
       notifyTimerExceeded();
       notificationSent = true;
     }
-    
-    // Update window with current time
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('timer-update', timerSeconds);
     }
   }, 1000);
-  
   updateIcons(true);
+  console.log('New timer started');
 }
 
 function stopTimer() {
+  console.log('stopTimer called');
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
+    console.log('Timer interval cleared');
   }
-  
   isTimerActive = false;
   timerSeconds = 0;
   notificationSent = false;
   updateIcons(false);
-  
-  // Notify renderer that timer stopped
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('timer-stopped');
   }
+  console.log('Timer stopped and state reset');
 }
 
 function notifyTimerExceeded() {
