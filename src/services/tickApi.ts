@@ -14,6 +14,30 @@ declare global {
             timerStarted: () => Promise<void>;
             timerStopped: () => Promise<void>;
             notifyTimerExceeded: () => Promise<void>;
+            startTimer: (notificationTimeHours: number) => Promise<void>;
+            stopTimer: () => Promise<void>;
+            getTimerState: () => Promise<{
+                isActive: boolean;
+                seconds: number;
+                notificationTimeSeconds: number;
+            }>;
+            onTimerUpdate: (callback: (event: any, seconds: number) => void) => void;
+            onTimerStopped: (callback: (event: any) => void) => void;
+            getSystemTheme: () => Promise<{
+                shouldUseDarkColors: boolean;
+                shouldUseHighContrastColors: boolean;
+                shouldUseInvertedColorScheme: boolean;
+            }>;
+            onSystemThemeChange: (callback: (event: any, theme: {
+                shouldUseDarkColors: boolean;
+                shouldUseHighContrastColors: boolean;
+                shouldUseInvertedColorScheme: boolean;
+            }) => void) => void;
+            removeSystemThemeListener: (callback: (event: any, theme: {
+                shouldUseDarkColors: boolean;
+                shouldUseHighContrastColors: boolean;
+                shouldUseInvertedColorScheme: boolean;
+            }) => void) => void;
         };
     }
 }
@@ -38,4 +62,16 @@ export const fetchClients = async (settings: Settings) => {
 
 export const notifyTimerExceeded = async () => {
     return window.tickApi.notifyTimerExceeded();
+};
+
+export const getSystemTheme = async () => {
+    return window.tickApi.getSystemTheme();
+};
+
+export const onSystemThemeChange = (callback: (event: any, theme: { shouldUseDarkColors: boolean; shouldUseHighContrastColors: boolean; shouldUseInvertedColorScheme: boolean; }) => void) => {
+    return window.tickApi.onSystemThemeChange(callback);
+};
+
+export const removeSystemThemeListener = (callback: (event: any, theme: { shouldUseDarkColors: boolean; shouldUseHighContrastColors: boolean; shouldUseInvertedColorScheme: boolean; }) => void) => {
+    return window.tickApi.removeSystemThemeListener(callback);
 };

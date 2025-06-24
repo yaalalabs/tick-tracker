@@ -7,6 +7,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Button from '@mui/material/Button';
+import { useTheme } from '@mui/material/styles';
 import { logTimeToTick, fetchTasks } from '../services/tickApi';
 
 interface Client {
@@ -73,6 +74,7 @@ function saveSelectedTask(taskId: number) {
 }
 
 export default function ProjectList({ clients, projects, settings }: ProjectListProps) {
+  const theme = useTheme();
   const [selectedClient, setSelectedClient] = useState<number | null>(getSelectedClient());
   const [selectedProject, setSelectedProject] = useState<number | null>(getSelectedProject());
   const [selectedTask, setSelectedTask] = useState<number | null>(getSelectedTask());
@@ -354,7 +356,14 @@ export default function ProjectList({ clients, projects, settings }: ProjectList
       </div>
       
       {lastCompletedTask && !active.projectId && !active.taskId && (
-        <div style={{ marginTop: 16, padding: 8, backgroundColor: '#2d2d2d', borderRadius: 4, textAlign: 'center' }}>
+        <div style={{ 
+          marginTop: 16, 
+          padding: 8, 
+          backgroundColor: theme.palette.background.paper, 
+          borderRadius: 4, 
+          textAlign: 'center',
+          border: `1px solid ${theme.palette.divider}`
+        }}>
           <strong>Last completed task:</strong><br />
           {(() => {
             const project = projects.find(p => p.id === lastCompletedTask.projectId);
