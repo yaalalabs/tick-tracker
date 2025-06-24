@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('tickApi', {
   getTimerState: () => ipcRenderer.invoke('get-timer-state'),
   onTimerUpdate: (callback) => ipcRenderer.on('timer-update', callback),
   onTimerStopped: (callback) => ipcRenderer.on('timer-stopped', callback),
+  getSystemTheme: () => ipcRenderer.invoke('get-system-theme'),
+  onSystemThemeChange: (callback) => ipcRenderer.on('system-theme-changed', callback),
+  removeSystemThemeListener: (callback) => ipcRenderer.removeListener('system-theme-changed', callback),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

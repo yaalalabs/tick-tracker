@@ -41,6 +41,4 @@
   color: #888;
 }
 
-body {
-  background-color: #1e1e1e;
-}
+/* Remove hardcoded background - let Material-UI handle it */

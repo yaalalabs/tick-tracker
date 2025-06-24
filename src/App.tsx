@@ -9,25 +9,34 @@ import MenuItem from '@mui/material/MenuItem';
 import SettingsDialog from './components/SettingsDialog';
 import GeneralSettingsDialog from './components/GeneralSettingsDialog';
 import ProjectList from './components/ProjectList';
-import { fetchProjects, fetchClients } from './services/tickApi';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { fetchProjects, fetchClients, getSystemTheme, onSystemThemeChange, removeSystemThemeListener } from './services/tickApi';
+import { ThemeProvider, createTheme, Theme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
-const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
-    background: {
-      default: '#1e1e1e',
-      paper: '#252526',
+// Create theme based on dark mode preference
+const createAppTheme = (isDarkMode: boolean): Theme => {
+  return createTheme({
+    palette: {
+      mode: isDarkMode ? 'dark' : 'light',
+      background: isDarkMode ? {
+        default: '#1e1e1e',
+        paper: '#252526',
+      } : {
+        default: '#ffffff',
+        paper: '#f5f5f5',
+      },
+      primary: {
+        main: '#007acc',
+      },
+      secondary: {
+        main: '#ff4081',
+      },
     },
-    primary: {
-      main: '#007acc',
-    },
-    secondary: {
-      main: '#ff4081',
-    },
-  },
-});
+  });
+};
+
+// Fallback theme (current implementation)
+const fallbackTheme = createAppTheme(true);
 
 interface Settings {
   token: string;
@@ -60,6 +69,41 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [currentTheme, setCurrentTheme] = useState<Theme>(fallbackTheme);
+
+  // Initialize system theme
+  useEffect(() => {
+    const initializeTheme = async () => {
+      try {
+        const systemTheme = await getSystemTheme();
+        const theme = createAppTheme(systemTheme.shouldUseDarkColors);
+        setCurrentTheme(theme);
+      } catch (error) {
+        console.warn('Failed to get system theme, using fallback:', error);
+        setCurrentTheme(fallbackTheme);
+      }
+    };
+
+    initializeTheme();
+
+    // Set up system theme change listener
+    const handleThemeChange = (event: any, themeInfo: { shouldUseDarkColors: boolean }) => {
+      try {
+        const theme = createAppTheme(themeInfo.shouldUseDarkColors);
+        setCurrentTheme(theme);
+      } catch (error) {
+        console.warn('Failed to update theme, using fallback:', error);
+        setCurrentTheme(fallbackTheme);
+      }
+    };
+
+    onSystemThemeChange(handleThemeChange);
+
+    // Cleanup listener on unmount
+    return () => {
+      removeSystemThemeListener(handleThemeChange);
+    };
+  }, []);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -116,7 +160,7 @@ export default function App() {
   };
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={currentTheme}>
       <CssBaseline />
       <IconButton 
         onClick={handleMenuClick}

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, Notification, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, Notification, nativeImage, nativeTheme } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
@@ -336,4 +336,24 @@ ipcMain.handle('notify-timer-exceeded', () => {
     title: 'Timer Warning',
     body: 'The current timer has been running for 6 hours.'
   }).show();
+});
+
+// IPC handlers for system theme detection
+ipcMain.handle('get-system-theme', () => {
+  return {
+    shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+    shouldUseHighContrastColors: nativeTheme.shouldUseHighContrastColors,
+    shouldUseInvertedColorScheme: nativeTheme.shouldUseInvertedColorScheme
+  };
+});
+
+// Listen for system theme changes and notify renderer
+nativeTheme.on('updated', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('system-theme-changed', {
+      shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+      shouldUseHighContrastColors: nativeTheme.shouldUseHighContrastColors,
+      shouldUseInvertedColorScheme: nativeTheme.shouldUseInvertedColorScheme
+    });
+  }
 }); 
